@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="A quiet portrait writing studio for recording words and webcam video together."
+    />
+    <meta name="theme-color" content="#151819" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="application-name" content="Wricord" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Wricord" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <title>Wricord</title>
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main id="app" class="app-shell" aria-label="Wricord portrait writing studio">
+      <section id="portraitStage" class="portrait-stage" aria-label="Portrait recording canvas">
+        <section class="camera-pane" aria-label="Camera preview">
+          <video
+            id="cameraBackdrop"
+            autoplay
+            muted
+            playsinline
+            aria-hidden="true"
+            tabindex="-1"
+          ></video>
+          <video
+            id="cameraPreview"
+            autoplay
+            muted
+            playsinline
+            aria-label="Live camera preview"
+          ></video>
+
+          <div id="cameraScrim" class="camera-scrim">
+            <p id="cameraMessage">Bring your camera into the frame when you’re ready.</p>
+            <button id="enableCamera" class="secondary-button" type="button">
+              Enable camera
+            </button>
+          </div>
+
+          <div class="capture-status" role="status" aria-live="polite" aria-atomic="true">
+            <span id="statusDot" aria-hidden="true"></span>
+            <span id="statusLabel">Camera off</span>
+          </div>
+
+          <div class="record-cluster" aria-label="Recording controls">
+            <button
+              id="recordButton"
+              class="record-button"
+              type="button"
+              aria-pressed="false"
+              aria-describedby="statusLabel"
+            >
+              <span class="record-glyph" aria-hidden="true"></span>
+              <span id="recordButtonText" class="sr-only">Start recording</span>
+            </button>
+
+            <button
+              id="micButton"
+              class="icon-button"
+              type="button"
+              aria-label="Mute microphone"
+              aria-pressed="false"
+              title="Mute microphone"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 15.25a3.25 3.25 0 0 0 3.25-3.25V7a3.25 3.25 0 0 0-6.5 0v5A3.25 3.25 0 0 0 12 15.25Z" />
+                <path d="M18.25 11.5v.5a6.25 6.25 0 0 1-12.5 0v-.5M12 18.25V22M9.25 22h5.5" />
+              </svg>
+            </button>
+
+            <button
+              id="mirrorButton"
+              class="icon-button"
+              type="button"
+              aria-label="Turn off mirrored preview"
+              aria-pressed="true"
+              title="Mirror preview"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m8 7-3 3 3 3" />
+                <path d="M5 10h10.5A3.5 3.5 0 0 1 19 13.5V14" />
+                <path d="m16 17 3-3-3-3" />
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <section class="writing-pane" aria-label="Writing area">
+          <div class="editor-frame">
+            <div
+              id="editor"
+              role="textbox"
+              contenteditable="true"
+              aria-multiline="true"
+              aria-label="Writing area"
+              spellcheck="true"
+            ></div>
+            <button
+              id="timestampButton"
+              class="timestamp-button"
+              type="button"
+              aria-haspopup="dialog"
+              aria-controls="timeDialog"
+              aria-label="Set the displayed date and time"
+            >
+              <time id="timestamp" aria-live="polite"></time>
+            </button>
+          </div>
+        </section>
+      </section>
+
+      <dialog id="timeDialog" aria-labelledby="timeDialogTitle">
+        <form id="timeForm" method="dialog">
+          <div class="dialog-heading">
+            <p class="dialog-eyebrow">Timestamp</p>
+            <h2 id="timeDialogTitle">Choose date and time</h2>
+          </div>
+
+          <fieldset class="mode-options">
+            <legend class="sr-only">Timestamp source</legend>
+            <label class="mode-option" for="currentTimeMode">
+              <input
+                id="currentTimeMode"
+                name="timeMode"
+                type="radio"
+                value="current"
+                checked
+              />
+              <span>
+                <strong>Current time</strong>
+                <small>Keep the timestamp live</small>
+              </span>
+            </label>
+            <label class="mode-option" for="manualTimeMode">
+              <input id="manualTimeMode" name="timeMode" type="radio" value="manual" />
+              <span>
+                <strong>Set manually</strong>
+                <small>Use a fixed date and time</small>
+              </span>
+            </label>
+          </fieldset>
+
+          <div class="manual-fields">
+            <label for="manualDate">
+              <span>Date</span>
+              <input id="manualDate" type="date" />
+            </label>
+            <label for="manualTime">
+              <span>Time</span>
+              <input id="manualTime" type="time" />
+            </label>
+          </div>
+
+          <div class="dialog-actions">
+            <button id="cancelTime" class="secondary-button" type="button">Cancel</button>
+            <button class="primary-button" type="submit" value="confirm">Apply</button>
+          </div>
+        </form>
+      </dialog>
+
+      <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+      <canvas id="captureCanvas" class="capture-canvas" aria-hidden="true"></canvas>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

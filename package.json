@@ -1,0 +1,20 @@
+{
+  "name": "wricord",
+  "version": "0.1.0",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "author": "Amin Ayub (https://github.com/AminAyub)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AminAyub/Wricord.git"
+  },
+  "type": "module",
+  "description": "A private, portrait writing and camera recorder for the browser.",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
