@@ -1,4 +1,5 @@
 import { renderComposition } from "./compositor.js";
+import { PagedEditor } from "./pages.js";
 import {
   applyBlockMarkdownShortcut,
   applyInlineMarkdownKeystroke,
@@ -6,7 +7,6 @@ import {
   editorToMarkdown,
   exitFormattedBlockOnEnter,
   markdownToHtml,
-  resetRichEditor,
   toggleInlineFormat,
 } from "./markdown.js";
 import { PortraitRecorder } from "./recorder.js";
@@ -96,9 +96,21 @@ if (!state.manualTimestamp || Number.isNaN(state.manualTimestamp.getTime())) {
 
 elements.editor.innerHTML = markdownToHtml(readStorage(storageKeys.text) ?? "");
 elements.editor.setAttribute("aria-label", "Writing area");
+const pagedEditor = new PagedEditor(elements.editor, {
+  previous: document.querySelector("#previousPage"),
+  next: document.querySelector("#nextPage"),
+  label: document.querySelector("#pageNumber"),
+});
+requestAnimationFrame(() => pagedEditor.paginate());
+let paginationFrame;
+new ResizeObserver(() => {
+  cancelAnimationFrame(paginationFrame);
+  paginationFrame = requestAnimationFrame(() => pagedEditor.paginate());
+}).observe(elements.editor);
 
 function persistEditor() {
-  const markdown = editorToMarkdown(elements.editor);
+  pagedEditor.paginate();
+  const markdown = pagedEditor.markdown(editorToMarkdown);
   writeStorage(storageKeys.text, markdown);
   return markdown;
 }
@@ -389,7 +401,7 @@ function revokeLastRecordingUrls() {
 }
 
 function clearEditor() {
-  resetRichEditor(elements.editor);
+  pagedEditor.reset();
   writeStorage(storageKeys.text, "");
   elements.editor.focus();
 }
@@ -513,7 +525,7 @@ async function stopRecording() {
   }
 
   elements.recordButton.disabled = true;
-  const markdownAtStop = editorToMarkdown(elements.editor);
+  const markdownAtStop = pagedEditor.markdown(editorToMarkdown);
   const stoppedAt = new Date();
 
   try {
@@ -643,11 +655,14 @@ elements.timestampButton.addEventListener("click", openTimeDialog);
 elements.cancelTime.addEventListener("click", closeTimeDialog);
 elements.timeForm.addEventListener("submit", saveTimeSelection);
 elements.timeForm.addEventListener("change", updateManualInputs);
-elements.editor.addEventListener("input", () => {
+elements.editor.addEventListener("compositionend", persistEditor);
+elements.editor.addEventListener("input", (event) => {
+  if (event.isComposing) return;
   applyInlineMarkdownShortcut(elements.editor);
   persistEditor();
 });
 elements.editor.addEventListener("beforeinput", (event) => {
+  if (event.isComposing) return;
   if (
     event.inputType === "insertText" &&
     typeof event.data === "string" &&
@@ -658,6 +673,7 @@ elements.editor.addEventListener("beforeinput", (event) => {
   }
 });
 elements.editor.addEventListener("keydown", (event) => {
+  if (event.isComposing) return;
   const formattingShortcut = (event.metaKey || event.ctrlKey) && !event.altKey;
   const key = event.key.toLowerCase();
 

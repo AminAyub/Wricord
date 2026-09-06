@@ -474,11 +474,8 @@ body.controls-hidden .record-cluster:focus-within .icon-button {
   min-width: 0;
   min-height: 0;
   resize: none;
-  padding:
-    clamp(24px, 7.8cqw, 42px)
-    clamp(22px, 7cqw, 38px)
-    clamp(66px, 13cqw, 76px);
-  overflow: auto;
+  padding: 7.8cqw 7cqw 16cqw;
+  overflow: hidden;
   border: 0;
   outline: 0;
   color: var(--ink);
@@ -486,7 +483,7 @@ body.controls-hidden .record-cluster:focus-within .icon-button {
   background: transparent;
   font-family: "Avenir Next", Avenir, "SF Pro Text", -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
-  font-size: clamp(11px, 2.2cqw, 13px);
+  font-size: 2.2cqw;
   font-weight: 450;
   line-height: 1.5;
   letter-spacing: 0;
@@ -499,6 +496,30 @@ body.controls-hidden .record-cluster:focus-within .icon-button {
 #editor::-webkit-scrollbar {
   display: none;
 }
+
+.page-controls {
+  position: absolute;
+  z-index: 3;
+  bottom: 18px;
+  left: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #526368;
+  font-size: 11px;
+}
+
+.page-controls button {
+  background: transparent;
+  color: inherit;
+  border: 0;
+  font-size: 22px;
+  width: 28px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.page-controls button:disabled { opacity: 0.25; cursor: default; }
 
 #editor::selection {
   color: #111514;

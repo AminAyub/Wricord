@@ -37,6 +37,7 @@ The recorder is designed for sessions of at least four minutes. Keep Wricord vis
 There is no application-imposed duration limit. Recordings stay in browser memory until export, so memory pressure, screen locking, and browser suspension can interrupt long sessions. The four-minute automated tests simulate scheduling and chunk retention; they do not validate a real browser encoder. Before important use, record four minutes with camera motion and changing text and inspect playback near the end.
 
 - Type directly on the A4-proportioned lower page. Draft text is saved automatically in local browser storage and displayed as rich Markdown. Typed `**bold**`, `*italic*`, headings, lists, quotes, and code are supported.
+- A complete A4 page stays visible beneath the camera. Text automatically continues on the next page when the printable area fills; use the bottom-left arrows to revisit and edit earlier pages. Text scales with the paper, and recordings capture only the currently displayed page (without the navigation controls). The `.md` export includes every page; stopping a recording clears them all. Deleting text on an earlier page leaves later pages in place.
 - Click the bottom-right timestamp to switch between the live clock and a fixed manual date/time.
 - Move the pointer over the camera to reveal Record, microphone, and mirror controls. Microphone audio is off by default.
 - Press **Command–B** or **Command–I** for bold or italic, **Command–Enter** to start or stop recording, or **Command–Shift–D** to edit the timestamp.
