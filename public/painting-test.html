@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Mondrian source test · Wricord</title><link rel="stylesheet" href="/src/painting-test.css"></head>
+<body><main><h1>Mondrian source test</h1><p>Open a saved portrait or video. Files stay on this device. This uses the same tracker, anchors, composition and painter as the webcam.</p>
+<label>Source <input id="sourceFile" type="file" accept="image/*,video/*"></label>
+<button id="replay" type="button">Restart composition</button><button id="debug" type="button" aria-pressed="false">Show anchors</button>
+<p id="sourceStatus" role="status">Choose an image or video to begin.</p>
+<div class="painting"><canvas id="output" width="720" height="288"></canvas><canvas id="debugOutput" width="720" height="288" aria-hidden="true"></canvas></div>
+<video id="sourceVideo" controls muted playsinline hidden></video><canvas id="sourceImage" hidden></canvas>
+<p><a href="/">Return to Wricord</a></p></main><script type="module" src="/src/painting-lab.js"></script></body></html>

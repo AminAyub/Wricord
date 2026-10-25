@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { drawContain, drawCover, wrapText } from "../src/compositor.js";
+import { drawCameraBand, drawContain, drawCover, wrapText } from "../src/compositor.js";
 import {
   PortraitRecorder,
   chooseRecordingMimeType,
@@ -82,6 +82,7 @@ test("wrapText breaks a single overlong word without splitting graphemes", () =>
 function fakeDrawingContext() {
   const calls = {
     drawImage: [],
+    fillRect: [],
     scale: [],
     translate: [],
   };
@@ -95,6 +96,9 @@ function fakeDrawingContext() {
     save() {},
     drawImage(...args) {
       calls.drawImage.push(args);
+    },
+    fillRect(...args) {
+      calls.fillRect.push(args);
     },
     scale(...args) {
       calls.scale.push(args);
@@ -121,6 +125,20 @@ test("drawCover crops the source without stretching it", () => {
     100,
     100,
   ]);
+});
+
+test("the compositor uses the filtered artwork across the whole camera band", () => {
+  const context = fakeDrawingContext();
+  const video = { videoWidth: 1280, videoHeight: 720 };
+  const artwork = { width: 720, height: 300 };
+  const band = { x: 0, y: 0, width: 1080, height: 450 };
+
+  drawCameraBand(context, video, artwork, band, true, true);
+
+  assert.equal(context.calls.drawImage.length, 1);
+  assert.equal(context.calls.drawImage[0][0], artwork);
+  assert.deepEqual(context.calls.drawImage[0].slice(-4), [0, 0, 1080, 450]);
+  assert.deepEqual(context.calls.scale, []);
 });
 
 test("drawContain preserves the full source and centers mirrored output", () => {

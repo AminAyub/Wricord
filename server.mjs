@@ -6,6 +6,42 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
 const defaultPort = 4173;
+const contentSecurityPolicy = [
+  "base-uri 'none'",
+  "connect-src 'self'",
+  "default-src 'self'",
+  "font-src 'self'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+  "img-src 'self' data: blob:",
+  "media-src 'self' blob:",
+  "object-src 'none'",
+  "script-src 'self' 'wasm-unsafe-eval'",
+  "style-src 'self'",
+  "worker-src 'self'"
+].join("; ");
+
+const mediapipeAssets = new Map([
+  ["/vendor/mediapipe/vision_bundle.mjs", "vision_bundle.mjs"],
+  ["/vendor/mediapipe/wasm/vision_wasm_internal.js", "wasm/vision_wasm_internal.js"],
+  ["/vendor/mediapipe/wasm/vision_wasm_internal.wasm", "wasm/vision_wasm_internal.wasm"],
+  [
+    "/vendor/mediapipe/wasm/vision_wasm_module_internal.js",
+    "wasm/vision_wasm_module_internal.js"
+  ],
+  [
+    "/vendor/mediapipe/wasm/vision_wasm_module_internal.wasm",
+    "wasm/vision_wasm_module_internal.wasm"
+  ],
+  [
+    "/vendor/mediapipe/wasm/vision_wasm_nosimd_internal.js",
+    "wasm/vision_wasm_nosimd_internal.js"
+  ],
+  [
+    "/vendor/mediapipe/wasm/vision_wasm_nosimd_internal.wasm",
+    "wasm/vision_wasm_nosimd_internal.wasm"
+  ]
+]);
 
 const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
@@ -16,6 +52,7 @@ const contentTypes = new Map([
   [".mjs", "text/javascript; charset=utf-8"],
   [".png", "image/png"],
   [".svg", "image/svg+xml; charset=utf-8"],
+  [".wasm", "application/wasm"],
   [".webmanifest", "application/manifest+json; charset=utf-8"],
   [".woff2", "font/woff2"]
 ]);
@@ -52,6 +89,21 @@ export function resolveRequestPath(requestTarget, rootDirectory = projectRoot) {
     return resolve(rootDirectory, "index.html");
   }
 
+  const mediapipeAsset = mediapipeAssets.get(pathname);
+  if (mediapipeAsset) {
+    return resolve(
+      rootDirectory,
+      "node_modules",
+      "@mediapipe",
+      "tasks-vision",
+      mediapipeAsset
+    );
+  }
+
+  if (pathname.startsWith("/vendor/mediapipe/")) {
+    return null;
+  }
+
   if (pathname.startsWith("/src/")) {
     return resolveWithin(rootDirectory, pathname);
   }
@@ -62,6 +114,7 @@ export function resolveRequestPath(requestTarget, rootDirectory = projectRoot) {
 function sendText(response, statusCode, message, requestMethod = "GET") {
   response.writeHead(statusCode, {
     "Cache-Control": "no-store",
+    "Content-Security-Policy": contentSecurityPolicy,
     "Content-Type": "text/plain; charset=utf-8",
     "X-Content-Type-Options": "nosniff"
   });
@@ -96,6 +149,7 @@ export function createStaticServer({ rootDirectory = projectRoot } = {}) {
 
       response.writeHead(200, {
         "Cache-Control": "no-store",
+        "Content-Security-Policy": contentSecurityPolicy,
         "Content-Length": fileStats.size,
         "Content-Type": contentTypeFor(filePath),
         "Permissions-Policy": "camera=(self), microphone=(self)",

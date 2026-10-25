@@ -1,5 +1,9 @@
 .DS_Store
 node_modules/
+public/models/face_landmarker.task
+public/models/.face_landmarker.task.*.tmp
+public/models/selfie_multiclass_256x256.tflite
+public/models/.selfie_multiclass_256x256.tflite.*.tmp
 .env
 .env.*
 *.log

@@ -1,4 +1,6 @@
+import { AbstractCameraRenderer } from "./camera-art.js";
 import { renderComposition } from "./compositor.js";
+import { FaceTracker } from "./face-tracker.js";
 import { PagedEditor } from "./pages.js";
 import {
   applyBlockMarkdownShortcut,
@@ -21,8 +23,10 @@ import {
 
 const elements = {
   stage: document.querySelector("#portraitStage"),
+  cameraPane: document.querySelector(".camera-pane"),
   video: document.querySelector("#cameraPreview"),
   cameraBackdrop: document.querySelector("#cameraBackdrop"),
+  cameraArt: document.querySelector("#cameraArt"),
   cameraScrim: document.querySelector("#cameraScrim"),
   cameraMessage: document.querySelector("#cameraMessage"),
   enableCamera: document.querySelector("#enableCamera"),
@@ -30,6 +34,7 @@ const elements = {
   statusLabel: document.querySelector("#statusLabel"),
   recordButton: document.querySelector("#recordButton"),
   recordButtonText: document.querySelector("#recordButtonText"),
+  artButton: document.querySelector("#artButton"),
   micButton: document.querySelector("#micButton"),
   mirrorButton: document.querySelector("#mirrorButton"),
   editor: document.querySelector("#editor"),
@@ -49,6 +54,9 @@ const storageKeys = {
   timeMode: "wricord.timeMode",
   manualTime: "wricord.manualTime",
   mirrored: "wricord.mirrored",
+  abstractCamera: "wricord.abstractCamera",
+  paintingMode: "wricord.paintingMode",
+  mondrianOptions: "wricord.mondrianOptions",
 };
 
 const readStorage = (key) => {
@@ -73,6 +81,8 @@ const state = {
   cameraReady: false,
   microphoneEnabled: false,
   mirrored: readStorage(storageKeys.mirrored) !== "false",
+  abstractEnabled: readStorage(storageKeys.abstractCamera) === "true",
+  paintingMode: ['mondrian', 'rothko-plus'].includes(readStorage(storageKeys.paintingMode)) ? readStorage(storageKeys.paintingMode) : 'rothko',
   recorder: null,
   recording: false,
   recordingExtension: null,
@@ -84,7 +94,19 @@ const state = {
   toastTimer: null,
   controlsTimer: null,
   wakeLock: null,
+  visionFailureReported: false,
 };
+
+const faceTracker = new FaceTracker();
+const abstractCamera = new AbstractCameraRenderer({
+  canvas: elements.cameraArt,
+  video: elements.video,
+  faceTracker,
+  getMirror: () => state.mirrored,
+});
+abstractCamera.setMode(state.paintingMode);
+abstractCamera.debugCanvas = document.querySelector('#paintingDebug');
+try { abstractCamera.mondrian.setOptions(JSON.parse(readStorage(storageKeys.mondrianOptions) || '{}')); } catch { /* Defaults remain usable. */ }
 
 const storedManualTimestamp = Number(readStorage(storageKeys.manualTime));
 if (Number.isFinite(storedManualTimestamp) && storedManualTimestamp > 0) {
@@ -213,12 +235,14 @@ async function enableCamera() {
       cameraView.srcObject = stream;
     }
     await Promise.all(cameraViews.map((cameraView) => cameraView.play()));
+    if (state.abstractEnabled) abstractCamera.restart();
     state.cameraReady = true;
     document.body.classList.add("camera-ready");
     elements.cameraScrim.hidden = true;
     setStatus("Ready");
 
     stream.getVideoTracks()[0]?.addEventListener("ended", () => {
+      abstractCamera.stop();
       state.cameraReady = false;
       document.body.classList.remove("camera-ready");
       setCameraMessage("Your camera stopped. Reconnect it to keep recording.", "Reconnect");
@@ -326,13 +350,58 @@ function toggleMirror() {
   state.mirrored = !state.mirrored;
   writeStorage(storageKeys.mirrored, String(state.mirrored));
   updateMirrorButton();
+  if (state.abstractEnabled) abstractCamera.render(state.mirrored, true);
+}
+
+function updateArtButton() {
+  elements.cameraPane.classList.toggle("is-abstract", state.abstractEnabled);
+  for (const [button, mode] of [[elements.artButton, 'rothko'], [document.querySelector('#mondrianButton'), 'mondrian'], [document.querySelector('#rothkoPlusButton'), 'rothko-plus']]) {
+    const active = state.abstractEnabled && state.paintingMode === mode;
+    const name = mode === 'rothko' ? 'Rothko' : mode === 'rothko-plus' ? 'Rothko+' : 'Mondrian';
+    button.classList.toggle('is-active', active);
+    button.setAttribute('aria-pressed', String(active));
+    button.setAttribute('aria-label', `Turn ${name} painting ${active ? 'off' : 'on'}`);
+    button.title = `${name} painting ${active ? 'on' : 'off'}`;
+  }
+  abstractCamera.debugCanvas.hidden = !state.abstractEnabled || state.paintingMode !== 'mondrian';
+}
+
+function toggleAbstractCamera(mode = 'rothko') {
+  state.abstractEnabled = !(state.abstractEnabled && state.paintingMode === mode);
+  state.paintingMode = mode;
+  abstractCamera.setMode(mode);
+  writeStorage(storageKeys.paintingMode, mode);
+  state.visionFailureReported = false;
+  writeStorage(storageKeys.abstractCamera, String(state.abstractEnabled));
+  updateArtButton();
+  if (state.abstractEnabled && state.cameraReady) {
+    abstractCamera.restart();
+  } else if (!state.abstractEnabled) {
+    abstractCamera.stop();
+  }
+}
+
+function reportVisionTrackingFailure() {
+  if (!state.abstractEnabled || faceTracker.status !== "failed") return;
+  if (state.visionFailureReported) return;
+  state.visionFailureReported = true;
+  showToast(
+    "Scene tracking is unavailable; the edge-aware painting is still running.",
+    "Retry",
+    () => {
+      state.visionFailureReported = false;
+      if (state.abstractEnabled && state.cameraReady) abstractCamera.restart();
+    },
+  );
 }
 
 function renderFrame() {
+  if (state.abstractEnabled) abstractCamera.render(state.mirrored);
   renderComposition({
     canvas: elements.canvas,
     stage: elements.stage,
     video: elements.video,
+    cameraArt: state.abstractEnabled ? elements.cameraArt : null,
     editor: elements.editor,
     timestamp: elements.timestamp,
     mirror: state.mirrored,
@@ -648,6 +717,26 @@ function scheduleControlsFade() {
 }
 
 elements.enableCamera.addEventListener("click", enableCamera);
+elements.artButton.addEventListener("click", () => toggleAbstractCamera('rothko'));
+document.querySelector('#mondrianButton').addEventListener('click', () => toggleAbstractCamera('mondrian'));
+document.querySelector('#rothkoPlusButton').addEventListener('click', () => toggleAbstractCamera('rothko-plus'));
+const paintingDialog = document.querySelector('#paintingDialog');
+const paintingControls = document.querySelector('#paintingControls');
+const populatePaintingControls = () => {
+  for (const input of paintingControls.querySelectorAll('input')) {
+    const value = abstractCamera.mondrian.options[input.name];
+    if (input.type === 'checkbox') input.checked = value;
+    else input.value = value;
+  }
+};
+document.querySelector('#paintingSettings').addEventListener('click', () => { populatePaintingControls(); paintingDialog.showModal(); });
+document.querySelector('#closePaintingSettings').addEventListener('click', () => paintingDialog.close());
+paintingControls.addEventListener('input', () => {
+  const options = Object.fromEntries([...paintingControls.querySelectorAll('input')].map(input => [input.name, input.type === 'checkbox' ? input.checked : Number(input.value)]));
+  abstractCamera.mondrian.setOptions(options);
+  writeStorage(storageKeys.mondrianOptions, JSON.stringify(options));
+  if (state.abstractEnabled) abstractCamera.render(state.mirrored, true);
+});
 elements.recordButton.addEventListener("click", toggleRecording);
 elements.micButton.addEventListener("click", toggleMicrophone);
 elements.mirrorButton.addEventListener("click", toggleMirror);
@@ -755,6 +844,7 @@ window.addEventListener("pageshow", () => {
 });
 
 window.addEventListener("beforeunload", () => {
+  abstractCamera.dispose();
   stopStream(state.cameraStream);
   stopStream(state.microphoneStream);
   revokeLastRecordingUrls();
@@ -769,9 +859,13 @@ if ("serviceWorker" in navigator) {
 }
 
 refreshTimestamp();
-window.setInterval(refreshTimestamp, 1_000);
+window.setInterval(() => {
+  refreshTimestamp();
+  reportVisionTrackingFailure();
+}, 1_000);
 updateMicrophoneButton();
 updateMirrorButton();
+updateArtButton();
 setStatus("Camera starting");
 scheduleControlsFade();
 

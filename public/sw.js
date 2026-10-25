@@ -1,9 +1,16 @@
-const CACHE_NAME = "wricord-v17";
+const CACHE_NAME = "wricord-v25";
 const APP_FILES = [
   "/",
   "/index.html",
   "/src/styles.css",
   "/src/main.js",
+  "/src/camera-art.js",
+  "/src/mondrian.js",
+  "/src/rothko-plus.js",
+  "/src/art-geometry.js",
+  "/src/scene-geometry.js",
+  "/src/face-tracker.js",
+  "/src/face-worker.js",
   "/src/pages.js",
   "/src/markdown.js",
   "/src/compositor.js",
