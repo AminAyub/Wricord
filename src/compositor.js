@@ -338,13 +338,22 @@ function closestOrQuery(element, stage, selector) {
   return element?.closest?.(selector) || stage?.querySelector?.(selector) || null;
 }
 
-function drawCameraBand(ctx, video, rect, mirror, sourceReady) {
+export function drawCameraBand(ctx, video, cameraArt, rect, mirror, sourceReady) {
   if (!rect) {
     return;
   }
 
   ctx.fillStyle = CAMERA_FALLBACK;
   ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+  const artworkDimensions = sourceDimensions(cameraArt);
+  if (artworkDimensions.width > 0 && artworkDimensions.height > 0) {
+    try {
+      if (drawCover(ctx, cameraArt, rect, false)) return;
+    } catch {
+      // Fall through to the raw camera composition if artwork is unavailable.
+    }
+  }
 
   if (!sourceReady) {
     return;
@@ -610,6 +619,7 @@ export function renderComposition({
   canvas,
   stage,
   video,
+  cameraArt,
   editor,
   timestamp,
   mirror = true,
@@ -669,7 +679,7 @@ export function renderComposition({
 
   const readyState = Number(video?.readyState);
   const sourceReady = !Number.isFinite(readyState) || readyState >= 2;
-  drawCameraBand(ctx, video, cameraRect, Boolean(mirror), sourceReady);
+  drawCameraBand(ctx, video, cameraArt, cameraRect, Boolean(mirror), sourceReady);
 
   ctx.fillStyle = PAPER_COLOR;
   ctx.fillRect(writingRect.x, writingRect.y, writingRect.width, writingRect.height);

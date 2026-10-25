@@ -40,7 +40,14 @@
             playsinline
             aria-label="Live camera preview"
           ></video>
+          <canvas
+            id="cameraArt"
+            width="720"
+            height="320"
+            aria-hidden="true"
+          ></canvas>
 
+          <canvas id="paintingDebug" aria-hidden="true" hidden></canvas>
           <div id="cameraScrim" class="camera-scrim">
             <p id="cameraMessage">Bring your camera into the frame when you’re ready.</p>
             <button id="enableCamera" class="secondary-button" type="button">
@@ -53,7 +60,23 @@
             <span id="statusLabel">Camera off</span>
           </div>
 
-          <div class="record-cluster" aria-label="Recording controls">
+          <div class="record-cluster" aria-label="Camera and recording controls">
+            <button id="mondrianButton" class="icon-button" type="button" aria-label="Turn Mondrian painting on" aria-pressed="false" title="Mondrian painting"><span aria-hidden="true">M</span></button>
+            <button id="rothkoPlusButton" class="icon-button" type="button" aria-label="Turn Rothko+ painting on" aria-pressed="false" title="Rothko+ painting"><span aria-hidden="true">R+</span></button>
+            <button id="paintingSettings" class="icon-button" type="button" aria-label="Mondrian settings" aria-haspopup="dialog" aria-controls="paintingDialog" title="Mondrian settings"><span aria-hidden="true">⋮</span></button>
+            <button
+              id="artButton"
+              class="icon-button"
+              type="button"
+              aria-label="Turn scene-aware painting on"
+              aria-pressed="false"
+              title="Scene-aware painting off"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 4h7v6H4zM13 4h7v10h-7zM4 12h7v8H4zM13 16h7v4h-7z" />
+              </svg>
+            </button>
+
             <button
               id="recordButton"
               class="record-button"
@@ -125,6 +148,20 @@
         </section>
       </section>
 
+      <dialog id="paintingDialog" aria-labelledby="paintingDialogTitle">
+        <div id="paintingControls">
+          <h2 id="paintingDialogTitle">Mondrian</h2>
+          <p>A quieter composition, shaped by your movement.</p>
+          <label>Abstraction <input name="abstraction" type="range" min="0" max="1" step="0.01" /><small>Detailed → fewer, larger fields</small></label>
+          <label>Colour density <input name="density" type="range" min="0" max="1" step="0.01" /><small>Mostly white → more colour</small></label>
+          <label>Responsiveness <input name="responsiveness" type="range" min="0" max="1" step="0.01" /><small>Slow, deliberate → responsive</small></label>
+          <label>Line thickness <input name="thickness" type="range" min="0" max="1" step="0.01" /></label>
+          <label>Subject recognizability <input name="recognizability" type="range" min="0" max="1" step="0.01" /><small>Loose composition → clearer person</small></label>
+          <label>Texture <input name="texture" type="range" min="0" max="1" step="0.01" /></label>
+          <label class="debug-option"><input name="debug" type="checkbox" /> Show anchors and partition (preview only)</label>
+        </div>
+        <div class="dialog-actions"><button id="closePaintingSettings" class="secondary-button" type="button">Done</button></div>
+      </dialog>
       <dialog id="timeDialog" aria-labelledby="timeDialogTitle">
         <form id="timeForm" method="dialog">
           <div class="dialog-heading">

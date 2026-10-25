@@ -104,7 +104,7 @@ button:not(:disabled) {
 
 .camera-pane {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   background:
     radial-gradient(circle at 50% 38%, #2d3232 0, #171a1b 52%, #101213 100%);
 }
@@ -126,6 +126,10 @@ button:not(:disabled) {
       rgba(7, 10, 11, 0.42) 100%
     ),
     linear-gradient(180deg, rgba(8, 10, 11, 0.08), transparent 58%, rgba(8, 10, 11, 0.2));
+}
+
+.camera-pane.is-abstract::after {
+  display: none;
 }
 
 #cameraBackdrop,
@@ -153,6 +157,28 @@ button:not(:disabled) {
   filter: contrast(1.015) saturate(0.96);
   transform: scaleX(-1);
   transition: transform 360ms var(--ease-out), opacity 240ms ease;
+}
+
+#cameraArt {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  background: #171719;
+  opacity: 0;
+}
+
+.camera-pane.is-abstract #cameraArt {
+  opacity: 1;
+}
+
+.camera-pane.is-abstract #cameraBackdrop,
+.camera-pane.is-abstract #cameraPreview {
+  opacity: 0;
+  filter: none;
 }
 
 .camera-pane.camera-mirrored #cameraPreview,
@@ -291,12 +317,31 @@ body.is-recording #statusDot {
   left: 50%;
   bottom: clamp(7px, 2.2cqw, 12px);
   display: grid;
-  grid-template-columns: 34px 46px 34px;
-  grid-template-areas: "mic record mirror";
+  grid-template-columns: 34px 34px 46px 34px 34px;
+  grid-template-areas: "art mic record mirror spare";
   align-items: center;
   gap: clamp(6px, 1.7cqw, 9px);
   transform: translateX(-50%);
 }
+
+.record-cluster::after {
+  grid-area: spare;
+  width: 100%;
+  content: "";
+}
+
+#mondrianButton { grid-area: mondrian; font: 600 13px sans-serif; }
+#rothkoPlusButton { grid-area: plus; font: 600 12px sans-serif; }
+#paintingSettings { grid-area: settings; font-size: 22px; }
+#paintingDebug { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
+#paintingDebug[hidden] { display: none; }
+#paintingControls { display: grid; gap: 14px; }
+#paintingControls h2, #paintingControls p { margin: 0; }
+#paintingControls label { display: grid; gap: 4px; font-size: 13px; }
+#paintingControls small { opacity: 0.65; font-size: 11px; }
+#paintingControls input[type="range"] { width: 100%; accent-color: #173e88; }
+#paintingControls .debug-option { display: flex; align-items: center; gap: 8px; }
+#paintingDialog { max-height: 88vh; overflow: auto; }
 
 .record-button,
 .icon-button {
@@ -366,6 +411,10 @@ body.is-recording #statusDot {
 
 #micButton {
   grid-area: mic;
+}
+
+#artButton {
+  grid-area: art;
 }
 
 #mirrorButton {
@@ -656,6 +705,17 @@ textarea:focus-visible {
   outline: none;
 }
 
+.camera-pane .record-cluster {
+  grid-template-columns: repeat(3, 34px) 46px repeat(3, 34px);
+  grid-template-areas: "art plus mondrian record mic mirror settings";
+  gap: 6px;
+}
+.camera-pane .record-cluster::after { display: none; }
+.camera-pane .record-cluster .icon-button { width: 34px; height: 34px; }
+#paintingDialog { width: min(380px, calc(100vw - 32px)); padding: 24px; border: 1px solid #ccc9c1; border-radius: 18px; background: #f4f1e7; color: #171817; color-scheme: light; }
+#paintingDialog::backdrop { background: #080b0c88; }
+#paintingDialog .dialog-actions { margin-top: 18px; }
+
 #timeDialog {
   width: min(calc(100vw - 32px), 370px);
   max-width: calc(100vw - 32px);
@@ -908,7 +968,7 @@ textarea:focus-visible {
 
 @media (hover: none) and (pointer: coarse) {
   .record-cluster {
-    grid-template-columns: 40px 48px 40px;
+    grid-template-columns: 40px 40px 48px 40px 40px;
   }
 
   .record-button {
@@ -935,7 +995,7 @@ textarea:focus-visible {
 
   .record-cluster {
     bottom: 6px;
-    grid-template-columns: 30px 42px 30px;
+    grid-template-columns: 30px 30px 42px 30px 30px;
     gap: 6px;
   }
 
@@ -952,7 +1012,7 @@ textarea:focus-visible {
 
 @media (max-height: 620px) and (hover: none) and (pointer: coarse) {
   .record-cluster {
-    grid-template-columns: 40px 44px 40px;
+    grid-template-columns: 40px 40px 44px 40px 40px;
   }
 
   .record-button {

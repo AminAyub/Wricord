@@ -11,8 +11,13 @@
   "type": "module",
   "description": "A private, portrait writing and camera recorder for the browser.",
   "scripts": {
+    "postinstall": "node scripts/install-vision-models.mjs",
+    "setup:model": "node scripts/install-vision-models.mjs",
     "start": "node server.mjs",
     "test": "node --test"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1"
   },
   "engines": {
     "node": ">=20"
